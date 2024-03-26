@@ -1,3 +1,4 @@
+from django.db.utils import IntegrityError
 from django.http import HttpRequest, JsonResponse
 from django.templatetags.static import static
 from rest_framework import status
@@ -71,11 +72,10 @@ def product_list_api(request):
 def register_order(request: HttpRequest):
     try:
         payload = request.data
-        products = payload.get("products")
 
-        validation_response = validate_products_list(products)
-        if validation_response:
-            return validation_response
+        validation_payload = validate_products_list(payload)
+        if validation_payload:
+            return validation_payload
 
         order = Order.objects.create(
             firstname=payload.get("firstname"),
@@ -89,7 +89,7 @@ def register_order(request: HttpRequest):
                 product_id=product.get("product"),
                 quantity=product.get("quantity"),
             )
-            for product in products
+            for product in payload.get("products")
         ]
 
         OrderItem.objects.bulk_create(order_items)
@@ -99,7 +99,8 @@ def register_order(request: HttpRequest):
             status=status.HTTP_201_CREATED,
         )
 
-    except Product.DoesNotExist:
+    except IntegrityError:
+        order.delete()
         return Response(
             {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
         )
