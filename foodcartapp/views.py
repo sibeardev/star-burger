@@ -1,11 +1,11 @@
-import json
-
 from django.http import HttpRequest, JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import Order, OrderItem, Product
+from .utils import validate_products_list
 
 
 def banners_list_api(request):
@@ -71,6 +71,12 @@ def product_list_api(request):
 def register_order(request: HttpRequest):
     try:
         payload = request.data
+        products = payload.get("products")
+
+        validation_response = validate_products_list(products)
+        if validation_response:
+            return validation_response
+
         order = Order.objects.create(
             firstname=payload.get("firstname"),
             lastname=payload.get("lastname"),
@@ -83,16 +89,21 @@ def register_order(request: HttpRequest):
                 product_id=product.get("product"),
                 quantity=product.get("quantity"),
             )
-            for product in payload.get("products")
+            for product in products
         ]
 
         OrderItem.objects.bulk_create(order_items)
 
-        return Response({"success": "Order created successfully"}, status=201)
+        return Response(
+            {"success": "Order created successfully"},
+            status=status.HTTP_201_CREATED,
+        )
 
-    except json.JSONDecodeError:
-        return Response({"error": "Invalid JSON format"}, status=400)
     except Product.DoesNotExist:
-        return Response({"error": "Product not found"}, status=404)
+        return Response(
+            {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        return Response(
+            {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
