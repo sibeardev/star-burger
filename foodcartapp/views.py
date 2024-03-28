@@ -92,6 +92,6 @@ def register_order(request: HttpRequest):
     OrderItem.objects.bulk_create(order_items)
 
     return Response(
-        {"success": "Order created successfully"},
+        data=OrderSerializer(order).data,
         status=status.HTTP_201_CREATED,
     )
