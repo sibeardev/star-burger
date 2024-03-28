@@ -1,4 +1,3 @@
-from django.db.utils import IntegrityError
 from django.http import HttpRequest, JsonResponse
 from django.templatetags.static import static
 from rest_framework import status
@@ -6,7 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import Order, OrderItem, Product
-from .utils import validate_products_list
+from .utils import OrderSerializer
 
 
 def banners_list_api(request):
@@ -70,41 +69,29 @@ def product_list_api(request):
 
 @api_view(["POST"])
 def register_order(request: HttpRequest):
-    try:
-        payload = request.data
 
-        validation_payload = validate_products_list(payload)
-        if validation_payload:
-            return validation_payload
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serialize_order = serializer.validated_data
 
-        order = Order.objects.create(
-            firstname=payload.get("firstname"),
-            lastname=payload.get("lastname"),
-            phonenumber=payload.get("phonenumber"),
-            address=payload.get("address"),
+    order = Order.objects.create(
+        firstname=serialize_order.get("firstname"),
+        lastname=serialize_order.get("lastname"),
+        phonenumber=serialize_order.get("phonenumber"),
+        address=serialize_order.get("address"),
+    )
+
+    order_items = [
+        OrderItem(
+            order=order,
+            product=product.get("product"),
+            quantity=product.get("quantity"),
         )
-        order_items = [
-            OrderItem(
-                order=order,
-                product_id=product.get("product"),
-                quantity=product.get("quantity"),
-            )
-            for product in payload.get("products")
-        ]
+        for product in serialize_order.get("products")
+    ]
+    OrderItem.objects.bulk_create(order_items)
 
-        OrderItem.objects.bulk_create(order_items)
-
-        return Response(
-            {"success": "Order created successfully"},
-            status=status.HTTP_201_CREATED,
-        )
-
-    except IntegrityError:
-        order.delete()
-        return Response(
-            {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    return Response(
+        {"success": "Order created successfully"},
+        status=status.HTTP_201_CREATED,
+    )
