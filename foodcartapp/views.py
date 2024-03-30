@@ -84,10 +84,11 @@ def register_order(request: HttpRequest):
     order_items = [
         OrderItem(
             order=order,
-            product=product.get("product"),
-            quantity=product.get("quantity"),
+            product=order_item.get("product"),
+            quantity=order_item.get("quantity"),
+            price=order_item.get("product").price,
         )
-        for product in serialize_order.get("products")
+        for order_item in serialize_order.get("products")
     ]
     OrderItem.objects.bulk_create(order_items)
 
