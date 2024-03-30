@@ -116,6 +116,12 @@ class OrderQuerySet(models.QuerySet):
 
 
 class Order(models.Model):
+    class OrderStatus(models.TextChoices):
+        NEW = "new", "Новый"
+        PREPARING = "preparing", "Готовится"
+        DELIVERING = "delivering", "Доставляется"
+        COMPLETED = "completed", "Выполнен"
+
     firstname = models.CharField(
         "Имя",
         max_length=50,
@@ -139,6 +145,13 @@ class Order(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Создано",
+    )
+    status = models.CharField(
+        "Статус",
+        max_length=12,
+        choices=OrderStatus.choices,
+        default=OrderStatus.NEW,
+        db_index=True,
     )
 
     objects = OrderQuerySet.as_manager()
