@@ -1,7 +1,10 @@
 from django.contrib import admin
-from django.shortcuts import reverse
+from django.shortcuts import redirect, reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.utils.http import url_has_allowed_host_and_scheme
+
+from star_burger.settings import ALLOWED_HOSTS
 
 from .models import (
     Order,
@@ -121,3 +124,12 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
+
+    def response_change(self, request, obj):
+        next_url = request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, ALLOWED_HOSTS
+        ):
+            return redirect(request.GET.get("next"))
+        else:
+            return redirect("admin:foodcartapp_order_changelist")
