@@ -123,6 +123,11 @@ class Order(models.Model):
         DELIVERING = "delivering", "Доставляется"
         COMPLETED = "completed", "Выполнен"
 
+    class OrderPayments(models.TextChoices):
+        CASH = "cash", "Наличные"
+        CARD = "card", "Карта"
+        ONLINE = "online", "Онлайн"
+
     firstname = models.CharField(
         "Имя",
         max_length=50,
@@ -164,6 +169,13 @@ class Order(models.Model):
         db_index=True,
     )
     comment = models.TextField("Комментарий", blank=True)
+    payments = models.CharField(
+        "Способ оплаты",
+        max_length=10,
+        choices=OrderPayments.choices,
+        blank=True,
+        db_index=True,
+    )
 
     objects = OrderQuerySet.as_manager()
 
