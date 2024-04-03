@@ -111,8 +111,11 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
-    orders = Order.objects.get_order_cost().exclude(
-        status=Order.OrderStatus.COMPLETED
+    orders = (
+        Order.objects.get_order_cost()
+        .prefetch_related("items__product")
+        .exclude(status=Order.OrderStatus.COMPLETED)
+        .add_restaurants_with_products()
     )
 
     return render(

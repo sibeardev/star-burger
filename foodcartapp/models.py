@@ -1,3 +1,6 @@
+from collections import defaultdict
+from functools import reduce
+
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F, Sum
@@ -115,6 +118,27 @@ class OrderQuerySet(models.QuerySet):
             cost=Sum(F("items__quantity") * F("items__product__price"))
         )
 
+    def add_restaurants_with_products(self):
+        menu_items = RestaurantMenuItem.objects.select_related(
+            "restaurant", "product"
+        )
+        product_restaurants_map = defaultdict(list)
+        for menu_item in menu_items:
+            product_restaurants_map[menu_item.product].append(
+                menu_item.restaurant
+            )
+        for order in self:
+            order_items = order.items.all()
+            grouped_by_product_restaurants = [
+                product_restaurants_map[product.product]
+                for product in order_items
+            ]
+            order.restaurant_with_product = reduce(
+                set.intersection, map(set, grouped_by_product_restaurants)
+            )
+
+        return self
+
 
 class Order(models.Model):
     class OrderStatus(models.TextChoices):
@@ -174,6 +198,15 @@ class Order(models.Model):
         max_length=10,
         choices=OrderPayments.choices,
         blank=True,
+        db_index=True,
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name="Ресторан",
+        related_name="restaurants",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
         db_index=True,
     )
 
