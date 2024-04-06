@@ -7,9 +7,7 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
-from star_burger.settings import YANDEX_API_KEY
-
-from .geocoder import calculate_distance, fetch_coordinates
+from location.geocoder import calculate_restaurant_distances, get_locations
 
 
 class Restaurant(models.Model):
@@ -133,6 +131,9 @@ class OrderQuerySet(models.QuerySet):
             product_restaurants_map[menu_item.product].append(
                 menu_item.restaurant
             )
+
+        locations = get_locations(set([order.address for order in self]))
+
         for order in self:
             order_items = order.items.all()
             grouped_by_product_restaurants = [
@@ -142,26 +143,16 @@ class OrderQuerySet(models.QuerySet):
             restaurant_with_product = reduce(
                 set.intersection, map(set, grouped_by_product_restaurants)
             )
-            coordinates = fetch_coordinates(YANDEX_API_KEY, order.address)
-            if coordinates is None:
+            try:
+                order_location = locations[order.address]
+                order.restaurant_with_product = calculate_restaurant_distances(
+                    restaurant_with_product, order_location
+                )
+            except KeyError:
                 order.restaurant_with_product = [
                     {"restaurant": restaurant}
                     for restaurant in restaurant_with_product
                 ]
-            else:
-                lon, lat = coordinates
-                order.restaurant_with_product = sorted(
-                    [
-                        {
-                            "restaurant": restaurant,
-                            "distance": calculate_distance(
-                                (restaurant.lat, restaurant.lon), (lat, lon)
-                            ),
-                        }
-                        for restaurant in restaurant_with_product
-                    ],
-                    key=lambda x: x["distance"],
-                )
 
         return self
 

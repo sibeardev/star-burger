@@ -1,6 +1,8 @@
 import requests
 from geopy import distance
 
+from .models import Location
+
 
 def fetch_coordinates(apikey, address):
     base_url = "https://geocode-maps.yandex.ru/1.x"
@@ -27,3 +29,25 @@ def fetch_coordinates(apikey, address):
 
 def calculate_distance(from_coordinates, to_coordinates):
     return round(distance.distance(from_coordinates, to_coordinates).km, 3)
+
+
+def get_locations(addresses):
+    return {
+        location.address: (location.lat, location.lon)
+        for location in Location.objects.filter(address__in=addresses)
+    }
+
+
+def calculate_restaurant_distances(restaurants, order_location):
+    return sorted(
+        [
+            {
+                "restaurant": restaurant,
+                "distance": calculate_distance(
+                    (restaurant.lat, restaurant.lon), order_location
+                ),
+            }
+            for restaurant in restaurants
+        ],
+        key=lambda x: x["distance"],
+    )

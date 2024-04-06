@@ -5,6 +5,10 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from location.geocoder import fetch_coordinates
+from location.models import Location
+from star_burger.settings import YANDEX_API_KEY
+
 from .models import Order, OrderItem, Product
 from .utils import OrderSerializer
 
@@ -75,12 +79,13 @@ def register_order(request: HttpRequest):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serialize_order = serializer.validated_data
+    address = serialize_order.get("address")
 
     order = Order.objects.create(
         firstname=serialize_order.get("firstname"),
         lastname=serialize_order.get("lastname"),
         phonenumber=serialize_order.get("phonenumber"),
-        address=serialize_order.get("address"),
+        address=address,
     )
     order_items = [
         OrderItem(
@@ -92,6 +97,11 @@ def register_order(request: HttpRequest):
         for order_item in serialize_order.get("products")
     ]
     OrderItem.objects.bulk_create(order_items)
+
+    coordinates = fetch_coordinates(YANDEX_API_KEY, order.address)
+    if coordinates:
+        lon, lat = coordinates
+        Location.objects.get_or_create(address=address, lat=lat, lon=lon)
 
     return Response(
         data=OrderSerializer(order).data,
