@@ -7,6 +7,10 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
+from star_burger.settings import YANDEX_API_KEY
+
+from .geocoder import calculate_distance, fetch_coordinates
+
 
 class Restaurant(models.Model):
     name = models.CharField("название", max_length=50)
@@ -20,6 +24,8 @@ class Restaurant(models.Model):
         max_length=50,
         blank=True,
     )
+    lat = models.FloatField("Широта", db_index=True, blank=True)
+    lon = models.FloatField("Долгота", db_index=True, blank=True)
 
     class Meta:
         verbose_name = "ресторан"
@@ -133,9 +139,29 @@ class OrderQuerySet(models.QuerySet):
                 product_restaurants_map[product.product]
                 for product in order_items
             ]
-            order.restaurant_with_product = reduce(
+            restaurant_with_product = reduce(
                 set.intersection, map(set, grouped_by_product_restaurants)
             )
+            coordinates = fetch_coordinates(YANDEX_API_KEY, order.address)
+            if coordinates is None:
+                order.restaurant_with_product = [
+                    {"restaurant": restaurant}
+                    for restaurant in restaurant_with_product
+                ]
+            else:
+                lon, lat = coordinates
+                order.restaurant_with_product = sorted(
+                    [
+                        {
+                            "restaurant": restaurant,
+                            "distance": calculate_distance(
+                                (restaurant.lat, restaurant.lon), (lat, lon)
+                            ),
+                        }
+                        for restaurant in restaurant_with_product
+                    ],
+                    key=lambda x: x["distance"],
+                )
 
         return self
 
