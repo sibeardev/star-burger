@@ -119,11 +119,13 @@ class ProductAdmin(admin.ModelAdmin):
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
+    autocomplete_fields = ["product"]
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
+    autocomplete_fields = ["restaurant"]
 
     def response_change(self, request, obj):
         next_url = request.GET.get("next")
