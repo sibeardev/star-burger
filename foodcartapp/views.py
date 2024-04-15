@@ -81,22 +81,7 @@ def register_order(request: HttpRequest):
     serialize_order = serializer.validated_data
     address = serialize_order.get("address")
 
-    order = Order.objects.create(
-        firstname=serialize_order.get("firstname"),
-        lastname=serialize_order.get("lastname"),
-        phonenumber=serialize_order.get("phonenumber"),
-        address=address,
-    )
-    order_items = [
-        OrderItem(
-            order=order,
-            product=order_item.get("product"),
-            quantity=order_item.get("quantity"),
-            price=order_item.get("product").price,
-        )
-        for order_item in serialize_order.get("products")
-    ]
-    OrderItem.objects.bulk_create(order_items)
+    order = serializer.save()
 
     coordinates = fetch_coordinates(YANDEX_API_KEY, order.address)
     if coordinates:

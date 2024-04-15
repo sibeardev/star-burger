@@ -24,3 +24,19 @@ class OrderSerializer(ModelSerializer):
             "phonenumber",
             "products",
         ]
+
+    def create(self, validated_data):
+        products = validated_data.pop("products")
+        order = Order.objects.create(**validated_data)
+        order_items = [
+            OrderItem(
+                order=order,
+                product=order_item.get("product"),
+                quantity=order_item.get("quantity"),
+                price=order_item.get("product").price,
+            )
+            for order_item in products
+        ]
+        OrderItem.objects.bulk_create(order_items)
+
+        return order
