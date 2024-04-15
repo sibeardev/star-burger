@@ -10,7 +10,7 @@ from location.models import Location
 from star_burger.settings import YANDEX_API_KEY
 
 from .models import Order, OrderItem, Product
-from .utils import OrderSerializer
+from .serializers import OrderSerializer
 
 
 def banners_list_api(request):
