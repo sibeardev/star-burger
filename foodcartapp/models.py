@@ -256,6 +256,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(
         default=1,
         verbose_name="Количество",
+        validators=[MinValueValidator(1)],
     )
     price = models.DecimalField(
         "Цена",
