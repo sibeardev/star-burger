@@ -150,6 +150,7 @@ Parcel будет следить за файлами в каталоге `bundle
 - `YANDEX_GEOCODER_API=` - Ваш ключ к API [Яндекс_гекодер](https://yandex.ru/dev/maps/geocoder/)
 - `ROLLBAR_TOKEN`= Ваш токен [access_token](https://app.rollbar.com/a/kamila_d/p/star-burger/settings/access_tokens)
 - `ROLLBAR_ENVIRONMENT`= Тип версии сайта (production или development). По умолчанию `development`
+- `DATABASE_URL` = postgres://_username_:_password_@_host_:_port_/_name_db_ [How To Use PostgreSQL](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04)
 
 ## Цели проекта
 
