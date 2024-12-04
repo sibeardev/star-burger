@@ -1,6 +1,6 @@
 # Сайт доставки еды Star Burger
 
-### [Star Burger](https://dad-siberian.com)
+### [Star Burger](https://dad-siberian.ru)
 
 Это сайт сети ресторанов Star Burger. Здесь можно заказать превосходные бургеры с доставкой на дом.
 
