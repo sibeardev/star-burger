@@ -1,0 +1,12 @@
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm install
+RUN npm install -g parcel@latest
+
+COPY ./bundles-src ./bundles-src
+
+CMD ["parcel", "build", "bundles-src/index.js", "--dist-dir", "bundles", "--public-url", "./"]

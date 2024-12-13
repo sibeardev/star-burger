@@ -1,0 +1,52 @@
+services:
+
+  frontend:
+    container_name: frontend
+    restart: always
+    volumes:
+      - ./bundles-src:/app/bundles-src
+      - ./bundles:/app/bundles
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    command: parcel watch bundles-src/index.js --dist-dir bundles --public-url "./"
+
+  django:
+    container_name: django
+    build:
+      context: .
+      dockerfile: Dockerfile.django
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
+    volumes:
+      - ./media:/app/media
+      - static_volume:/app/staticfiles
+    ports:
+      - "8080:8000"
+    depends_on:
+      - db
+      - frontend
+    restart: always
+    networks:
+      - default
+
+  db:
+    container_name: db
+    image: postgres:14.0-alpine
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - default
+    restart: always
+
+volumes:
+  static_volume:
+  postgres_data:
+
+networks:
+  default:
