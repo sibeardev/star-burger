@@ -1,0 +1,40 @@
+services:
+
+  django:
+    container_name: django
+    build:
+      context: .
+      dockerfile: Dockerfile.django
+    command: gunicorn star_burger.wsgi:application --bind 127.0.0.1:8080
+    env_file:
+      - .env
+    volumes:
+      - ./media:/app/media
+      - static_volume:/app/staticfiles
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: always
+    networks:
+      - default
+
+  db:
+    container_name: db
+    image: postgres:14.0-alpine
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - default
+    restart: always
+
+volumes:
+  static_volume:
+  postgres_data:
+
+networks:
+  default:
