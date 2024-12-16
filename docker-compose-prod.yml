@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.django
-    command: gunicorn star_burger.wsgi:application --bind 127.0.0.1:8080
+    command: gunicorn star_burger.wsgi:application --bind 0.0.0.0:8080
     env_file:
       - .env
     volumes:
