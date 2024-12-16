@@ -196,6 +196,80 @@ YANDEX_API_TOKEN=Токен API Яндекса для использования
 - `ROLLBAR_ENVIRONMENT`= Тип версии сайта (production или development). По умолчанию `development`
 - `DATABASE_URL` = postgres://_username_:_password_@_host_:_port_/_name_db_ [How To Use PostgreSQL](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04)
 
+## Как запустить prod-версию сайта с помощью Docker
+
+- **Docker**: Убедитесь, что Docker установлен и работает на вашем компьютере.
+- **Docker Compose**: Docker Compose должен быть установлен вместе с Docker.
+
+### Шаг 1: Клонирование репозитория
+
+```bash
+    git clone https://github.com/sibeardev/star-burger.git
+    cd star-burger
+```
+
+### Шаг 2: Настройка переменных окружения
+
+Создайте файл .env в корневой директории с содержимым:
+
+```
+# Настройки PostgreSQL
+POSTGRES_USER=ваш_пользователь_postgres
+POSTGRES_PASSWORD=ваш_пароль_postgres
+POSTGRES_DB=имя_вашей_базы
+DATABASE_URL=postgres://ваш_пользователь_postgres:ваш_пароль_postgres@db:5432/имя_вашей_базы
+ROLLBAR_ACCESS_TOKEN=Токен встраиваемого в приложение модуля платформы отслеживания ошибок Rollbar
+YANDEX_API_TOKEN=Токен API Яндекса для использования координат местоположения
+```
+
+### Шаг 3: Настройте проброс данных через реверс-прокси nginx
+
+Реверс-прокси – это посредник, задача которого “передать” запрос от внешнего клиента ко внутреннему веб-сервису.
+
+[Подробнее](https://dvmn.org/encyclopedia/web-server/deploy-django-nginx-gunicorn/)
+
+Пример такой настройки:
+
+```
+server {
+    listen <your_ip_address>:80;
+
+    location / {
+	include '/etc/nginx/proxy_params';
+        proxy_pass http://localhost:8080;
+    }
+
+    location /static/ {
+        alias <path_to_your_django_app>/staticfiles/;
+    }
+
+    location /media/ {
+        alias <path_to_your_django_app>/media/;
+    }
+}
+```
+### Шаг 4: Сборка и запуск контейнеров
+
+Соберите и запустите контейнеры с помощью команды:
+
+Команда для сборки фронтенда:
+
+```bash
+  docker build -t star-burger-frontend  -f Dockerfile.frontend .
+  docker run --rm -v $(pwd)/bundles:/app/bundles star-burger-frontend
+```
+Команда для запуска django приложения:
+
+```bash
+  docker-compose -f docker-compose-prod.yml up --build
+```
+
+Запустите миграцию структуру базы данных следующей командой:
+
+```bash
+  docker exec -t django python manage.py migrate
+```
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).
